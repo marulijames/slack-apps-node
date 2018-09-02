@@ -16,7 +16,6 @@ const fields = ['requester', 'status', 'agent', 'priority'];
 const store = level('./data/tickets', { valueEncoding: 'json' });
 
 class Ticket {
-
   constructor(properties) {
     debug('constructor');
     for (var prop in properties) {
@@ -40,17 +39,17 @@ class Ticket {
     return update.then(() => this.save());
   }
 
-  setAgent(userId) {
+    setAgent(userId) {
     debug('setting agent');
-    debug('agent usrId : '+userId);
+    debug('agent usrId : ' + userId);
     return users.find(userId).then((result) => {
-      debug('find users result : '+result.data);
+      debug('find users result : ' + result.data);
       this.fields.agent = result.data.user.name;
       const agentNotification = this.chatNotify(result.data.user.id, false);
 
       const message = `<${this.link}|${this.title}> updated! Agent ${this.fields.agent} is now assigned`;
       const channelNotification = axios.post(process.env.SLACK_WEBHOOK, { text: message });
-
+      this.agentIsSet = true;
       return Promise.all([agentNotification, channelNotification]);
     });
   }
@@ -65,7 +64,12 @@ class Ticket {
 
   postToChannel(url) {
     debug('posting to channel');
-    return axios.post(url || process.env.SLACK_WEBHOOK, template.fill(this));
+    if (this.agentIsSet) {
+      this.agentIsSet = false;
+      return axios.post(url || process.env.SLACK_WEBHOOK, template.fill(this, false));
+    } else {
+      return axios.post(url || process.env.SLACK_WEBHOOK, template.fill(this));
+    }
   }
 
   chatNotify(slackUserId, isActionable) {
@@ -105,8 +109,8 @@ class Ticket {
     debug(`fetching id: ${id}`)
     return new Promise((resolve, reject) => {
       store.get(id, (error, properties) => {
-        if (error) { 
-          return reject(error); 
+        if (error) {
+          return reject(error);
         }
         resolve(new Ticket(properties));
       });

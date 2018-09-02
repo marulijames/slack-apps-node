@@ -13,7 +13,7 @@ consumer = new Consumer(client,
 consumer.on('message', function (message) {
     if (message.value.replace(/[\n\t\r]/g, "") == 'send') {
         request.post(
-            'http://a0cd28d5.ngrok.io/incoming',
+            'http://a261e529.ngrok.io/incoming',
             {
                 json: {
                     'id': '1234',
